@@ -17,7 +17,7 @@ def startup():
 # ─── CORS (allows your React frontend to call this API) ───────────────────────
 app.add_middleware(
     CORSMiddleware,
-    # allow_origins=["http://localhost:3000", "https://your-project.vercel.app" ],
+    allow_origins=["http://localhost:3000", "https://your-project.vercel.app" ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

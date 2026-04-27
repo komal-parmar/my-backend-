@@ -48,6 +48,7 @@ Return ONLY this JSON (no extra text):
 """
     model = get_gemini_model()
     response=model.generate_content(prompt)
+    raw=response.txt
     # Strip markdown code fences if Gemini adds them
     raw = raw.replace("```json", "").replace("```", "").strip()
     return json.loads(raw)

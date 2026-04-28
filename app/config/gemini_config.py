@@ -12,4 +12,4 @@ def init_gemini():
 
 def get_gemini_model():
     init_gemini()
-    return genai.GenerativeModel("gemini-1.5-pro-latest")  # gemini-pro is deprecated
+    return genai.GenerativeModel("gemini-pro")  # gemini-pro is deprecated

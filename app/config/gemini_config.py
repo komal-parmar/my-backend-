@@ -1,12 +1,5 @@
-"""
-config/gemini_config.py
-───────────────────────
-Initializes the Gemini AI client.
-Import `get_gemini_model()` wherever you need AI features.
-"""
-
 import os
-import google.generativeai as genai
+from google import genai
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -22,19 +15,20 @@ def init_gemini():
             "→ Get it free from: https://aistudio.google.com/app/apikey\n"
             "→ Paste it in your .env file"
         )
-
-    genai.configure(api_key=api_key)
     print("✅ Gemini AI connected successfully")
 
 
-def get_gemini_model():
+def get_gemini_client():
     """
-    Returns a ready-to-use Gemini model instance.
+    Returns a ready-to-use Gemini client instance.
 
     Usage:
-        from config.gemini_config import get_gemini_model
-        model = get_gemini_model()
-        response = model.generate_content("Your prompt here")
+        from config.gemini_config import get_gemini_client
+        client = get_gemini_client()
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents="Your prompt here"
+        )
         print(response.text)
     """
-    return genai.GenerativeModel("gemini-2.0-flash")   # Fast + free tier
+    return genai.Client(api_key=os.getenv("GEMINI_API_KEY"))

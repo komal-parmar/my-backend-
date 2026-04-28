@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 import os, httpx, json
 from firebase_admin import firestore
 from app.config.firebase_config import db
-from app.config.gemini_config import get_gemini_model
+from app.config.gemini_config import get_gemini_client  # ✅ updated import
 from app.models.schema import RiskAnalysisRequest, RiskAnalysisResult, RiskLevel
 
 router = APIRouter()
@@ -46,32 +46,30 @@ Return ONLY this JSON (no extra text):
   "recommendation": "<one clear action to take>"
 }}
 """
-    model = get_gemini_model()
-    response=model.generate_content(prompt)
-    raw=response.txt
-    # Strip markdown code fences if Gemini adds them
+    client = get_gemini_client()                          # ✅ updated to client
+    response = client.models.generate_content(            # ✅ updated call
+        model="gemini-2.0-flash",
+        contents=prompt
+    )
+    raw = response.text                                   # ✅ fixed typo: .txt → .text
     raw = raw.replace("```json", "").replace("```", "").strip()
     return json.loads(raw)
 
 # ─── POST /api/risk/analyze ───────────────────────────────────────────────────
 @router.post("/analyze", response_model=RiskAnalysisResult)
 async def analyze_risk(req: RiskAnalysisRequest):
-    # 1. Check shipment exists
     doc = db.collection("shipments").document(req.shipment_id).get()
     if not doc.exists:
         raise HTTPException(status_code=404, detail="Shipment not found")
 
-    # 2. Get weather for both cities
     weather_origin = await get_weather(req.origin)
     weather_dest   = await get_weather(req.destination)
 
-    # 3. Ask Gemini
     try:
         gemini_result = analyze_with_gemini(req.origin, req.destination, weather_origin, weather_dest)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Gemini analysis failed: {str(e)}")
 
-    # 4. Save risk result back to Firestore
     now = datetime.now(timezone.utc).isoformat()
     db.collection("shipments").document(req.shipment_id).update({
         "risk_score": gemini_result["risk_score"],
@@ -79,7 +77,6 @@ async def analyze_risk(req: RiskAnalysisRequest):
         "updated_at": now,
     })
 
-    # 5. Save to risk_analyses collection for history
     db.collection("risk_analyses").add({
         "shipment_id":   req.shipment_id,
         "analyzed_at":   now,

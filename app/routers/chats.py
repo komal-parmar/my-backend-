@@ -1,7 +1,6 @@
 from fastapi import APIRouter
-# import json
 from app.config.firebase_config import db
-from app.config.gemini_config import get_gemini_model
+from app.config.gemini_config import get_gemini_client  # ✅ updated import
 from app.models.schema import ChatMessage, ChatResponse
 
 router = APIRouter()
@@ -11,7 +10,6 @@ router = APIRouter()
 def chat(msg: ChatMessage):
     context = ""
 
-    # If user mentioned a specific shipment, load its data as context
     if msg.shipment_id:
         doc = db.collection("shipments").document(msg.shipment_id).get()
         if doc.exists:
@@ -38,12 +36,18 @@ Give a helpful, direct answer in 2-4 sentences. If you don't have enough informa
 """
 
     try:
-        model = get_gemini_model()
-        response = model.generate_content(prompt)
+        client = get_gemini_client()                         # ✅ updated to client
+        response = client.models.generate_content(           # ✅ updated call
+            model="gemini-2.0-flash",
+            contents=prompt
+        )
         reply = getattr(response, "text", None)
         if not reply:
             reply = "No response generated"
     except Exception as e:
         reply = f"Sorry, I couldn't process that right now. Error: {str(e)}"
 
-    return ChatResponse(reply=reply, sources=["Gemini AI", "Firestore shipment data"] if msg.shipment_id else ["Gemini AI"])
+    return ChatResponse(
+        reply=reply,
+        sources=["Gemini AI", "Firestore shipment data"] if msg.shipment_id else ["Gemini AI"]
+    )

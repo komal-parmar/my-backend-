@@ -1,13 +1,14 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-from google import genai
+import google.generativeai as genai
 import json
 import os
 
-router = APIRouter(tags=["Route Analyze"])
+router = APIRouter(prefix="/api", tags=["Route Analysis"])
 
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 
 class RouteRequest(BaseModel):
@@ -21,51 +22,49 @@ async def analyze_route(req: RouteRequest):
     waypoint_text = f"via {req.waypoint}" if req.waypoint else "direct"
 
     prompt = f"""
-You are a logistics risk intelligence expert for Indian freight and supply chain operations.
+You are a logistics risk intelligence expert for Indian freight operations.
 
-Analyze this specific route and provide a real-time risk assessment:
-ROUTE: {req.origin} → {req.destination} ({waypoint_text})
+Analyze this route and return ONLY raw JSON — no markdown, no explanation, no code fences:
 
-Return ONLY a valid JSON object with this exact structure, no markdown, no explanation, just raw JSON:
+ROUTE: {req.origin} to {req.destination} ({waypoint_text})
 
+Return this exact JSON structure:
 {{
   "origin": "{req.origin}",
   "destination": "{req.destination}",
   "risk_score": <integer 0-100>,
   "risk_level": "<LOW|MED|HIGH>",
   "estimated_delay": "<e.g. 2-3 hrs or None>",
-  "distance_km": <estimated integer km>,
-  "transit_hours": <estimated float hours>,
-  "fuel_liters": <estimated integer liters for a heavy truck>,
+  "distance_km": <integer>,
+  "transit_hours": <float>,
+  "fuel_liters": <integer>,
   "disruptions": [
     {{
       "type": "<Weather|Traffic|Port|Strike|Road|Other>",
-      "detail": "<specific detail about this disruption on this exact route>"
+      "detail": "<specific detail for this route>"
     }}
   ],
-  "recommendation": "<specific actionable rerouting recommendation>",
+  "recommendation": "<specific actionable recommendation>",
   "highway": "<main highway e.g. NH-48>",
-  "risk_summary": "<2 sentence plain English summary of the overall risk>"
+  "risk_summary": "<2 sentence plain English risk summary>"
 }}
-
-Be specific to the actual {req.origin} to {req.destination} route in India.
 """
 
     try:
-        response = client.models.generate_content(
-            model="gemini-1.5-flash",
-            contents=prompt
-        )
+        response = model.generate_content(prompt)
         response_text = response.text.strip()
 
-        # Clean markdown fences if Gemini adds them
-        FENCE = "```"
-        if FENCE in response_text:
-            parts = response_text.split(FENCE)
-            inner = parts[1].strip()
-            if inner.startswith("json"):
-                inner = inner[4:].strip()
-            return json.loads(inner)
+        # Strip markdown fences if Gemini adds them
+        if "```" in response_text:
+            parts = response_text.split("```")
+            for part in parts:
+                part = part.strip()
+                if part.startswith("json"):
+                    part = part[4:].strip()
+                try:
+                    return json.loads(part)
+                except Exception:
+                    continue
 
         return json.loads(response_text)
 

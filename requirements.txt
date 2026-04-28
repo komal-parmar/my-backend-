@@ -3,6 +3,6 @@ uvicorn[standard]
 firebase-admin
 google-cloud-firestore
 python-dotenv
-google-genai>=0.8.0
+google-generativeai
 httpx
 python-multipart

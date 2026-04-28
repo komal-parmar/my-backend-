@@ -15,7 +15,7 @@ def init_firebase():
 
     # Initialize Firebase only once
     if not firebase_admin._apps:
-        cred = credentials.Certificate(firebase_dict)
+        cred = credentials.Certificate("app/config/ServiceAccountKey.json")
         firebase_admin.initialize_app(cred)
 
     return firestore.client()

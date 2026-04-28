@@ -1,15 +1,14 @@
-from google import genai
 import os
+import google.generativeai as genai
 
-def get_gemini_client():
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        raise ValueError("GEMINI_API_KEY is missing!")
-    return genai.Client(api_key=api_key)
+# Load API key from environment
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-def analyze_route(origin, destination, client):
-    response = client.models.generate_content(
-        model="gemini-2.0-flash",
-        contents=f"Analyze supply chain risk for route: {origin} to {destination}"
-    )
-    return response.text
+if not GEMINI_API_KEY:
+    raise ValueError("GEMINI_API_KEY not set")
+
+genai.configure(api_key=GEMINI_API_KEY)
+
+def get_gemini_model():
+    model = genai.GenerativeModel("gemini-1.5-flash")
+    return model

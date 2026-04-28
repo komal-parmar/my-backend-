@@ -1,10 +1,5 @@
---prefer-binary
-fastapi==0.111.0
-uvicorn==0.30.1
-firebase-admin==6.5.0
-google-genai
-python-dotenv==1.0.1
-httpx==0.27.0
-pydantic==2.7.4
-python-jose==3.3.0
-passlib==1.7.4
+fastapi
+uvicorn
+firebase-admin
+python-dotenv
+google-generativeai

@@ -1,5 +1,6 @@
 fastapi
-uvicorn
+uvicorn[standard]
 firebase-admin
+google-cloud-firestore
 python-dotenv
 google-generativeai

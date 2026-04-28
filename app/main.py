@@ -1,37 +1,30 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
-import os
 
-load_dotenv()
-
-# Import all routers — names must EXACTLY match filenames
+# Import routers
 from app.routers import alerts
-from app.routers import analyze_route   # file must be analyze_route.py (lowercase)
+from app.routers import analyze_route
 from app.routers import risk
 from app.routers import shipments
 from app.routers import chats
 
 app = FastAPI(title="SupplyLens API")
 
+# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://your-frontend.vercel.app",   # replace with your actual Vercel URL
-        "*"                                    # remove this in production
-    ],
+    allow_origins=["*"],  # change later for production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Register routers
-app.include_router(alerts.router)
-app.include_router(analyze_route.router)
-app.include_router(risk.router)
-app.include_router(shipments.router)
-app.include_router(chats.router)
+# Register routers with prefixes
+app.include_router(alerts.router, prefix="/alerts")
+app.include_router(analyze_route.router, prefix="/route")
+app.include_router(risk.router, prefix="/risk")
+app.include_router(shipments.router, prefix="/shipments")
+app.include_router(chats.router, prefix="/chat")
 
 
 @app.get("/")

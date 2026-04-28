@@ -1,16 +1,14 @@
 from fastapi import APIRouter
 from app.config.firebase_config import db
-from app.config.gemini_config import init_gemini, get_gemini_model
+from app.config.gemini_config import get_gemini_model   # ✅ removed unused init_gemini import
 from app.models.schema import ChatMessage, ChatResponse
 
 router = APIRouter()
 
-# ─── POST /api/chat ───────────────────────────────────────────────────────────
 @router.post("/", response_model=ChatResponse)
 def chat(msg: ChatMessage):
     context = ""
 
-    # ─── Get shipment context ────────────────────────────────────────────────
     if msg.shipment_id:
         doc = db.collection("shipments").document(msg.shipment_id).get()
         if doc.exists:
@@ -30,20 +28,14 @@ Shipment context:
     prompt = f"""
 You are a helpful supply chain assistant. Answer the user's question clearly and concisely.
 {context}
-
 User question: {msg.message}
-
-Give a helpful, direct answer in 2-4 sentences. If you don't have enough information, say so politely.
+Give a helpful, direct answer in 2-4 sentences.
 """
 
     try:
-        # ✅ correct usage
-        init_gemini()
-        model = get_gemini_model()
-
+        model = get_gemini_model()              # ✅ no need to call init_gemini() separately
         response = model.generate_content(prompt)
         reply = response.text if response.text else "No response generated"
-
     except Exception as e:
         reply = f"Sorry, I couldn't process that right now. Error: {str(e)}"
 

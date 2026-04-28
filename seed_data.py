@@ -1,4 +1,4 @@
-from app.config.firebase_config import init_firebase, db
+from app.config.firebase_config import db   # ✅ just import db, no need for init_firebase
 from datetime import datetime, timezone
 
 SAMPLE_SHIPMENTS = [
@@ -10,9 +10,9 @@ SAMPLE_SHIPMENTS = [
         "weight_kg": 850.0,
         "carrier": "DHL Express",
         "route": "Sea → Arabian Sea → Port Rashid",
-        "estimated_arrival": "2025-05-12",   # ✅ fixed name
+        "estimated_arrival": "2025-05-12",
         "status": "in_transit",
-        "risk_level": "low",                 # ✅ fixed enum
+        "risk_level": "low",
         "risk_score": 0.0,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": datetime.now(timezone.utc).isoformat(),
@@ -79,28 +79,19 @@ SAMPLE_SHIPMENTS = [
     },
 ]
 
-
 def seed():
     print("🌱 Seeding Firestore with sample shipments...")
-    init_firebase()
-
     collection = db.collection("shipments")
 
     for shipment in SAMPLE_SHIPMENTS:
-        # Check if tracking_id already exists
         existing = collection.where("tracking_id", "==", shipment["tracking_id"]).limit(1).stream()
-
         if any(True for _ in existing):
-            print(f"⚠️ {shipment['tracking_id']} already exists — skipping")
+            print(f"⚠️  {shipment['tracking_id']} already exists — skipping")
             continue
-
-        # ✅ cleaner Firestore ID handling
         _, doc_ref = collection.add(shipment)
-
         print(f"✅ Created {shipment['tracking_id']} → ID: {doc_ref.id}")
 
     print("\n🎉 Done! Your database now has sample shipments.")
-
 
 if __name__ == "__main__":
     seed()

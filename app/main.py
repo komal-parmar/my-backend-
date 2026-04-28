@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
 
+load_dotenv()  
 # Import routers
 from app.routers import alerts
 from app.routers import analyze_route

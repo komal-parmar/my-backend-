@@ -1,6 +1,6 @@
 # Environment & secrets
 .env
-ServiceAccountKey.json
+app/config/ServiceAccountKey.json
 
 # Python
 __pycache__/

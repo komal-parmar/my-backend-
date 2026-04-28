@@ -4,3 +4,5 @@ firebase-admin
 google-cloud-firestore
 python-dotenv
 google-generativeai
+httpx
+python-multipart

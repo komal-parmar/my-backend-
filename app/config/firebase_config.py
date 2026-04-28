@@ -5,20 +5,17 @@ from firebase_admin import credentials, firestore
 
 def init_firebase():
     if not firebase_admin._apps:
+
         firebase_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
 
-        if not firebase_json:
-            raise ValueError("FIREBASE_SERVICE_ACCOUNT_JSON is not set")
-
-        try:
+        if firebase_json:
             cred_dict = json.loads(firebase_json)
             cred = credentials.Certificate(cred_dict)
-            firebase_admin.initialize_app(cred)
-        except Exception as e:
-            raise RuntimeError(f"Firebase init failed: {e}")
+        else:
+            cred = credentials.Certificate("app/config/ServiceAccountKey.json")
+
+        firebase_admin.initialize_app(cred)
 
     return firestore.client()
 
-
-# Initialize DB
 db = init_firebase()

@@ -3,12 +3,11 @@ from datetime import datetime, timezone
 import os, httpx, json
 from firebase_admin import firestore
 from app.config.firebase_config import db
-from app.config.gemini_config import get_gemini_client  # ✅ updated import
-from app.models.schema import RiskAnalysisRequest, RiskAnalysisResult, RiskLevel
+from app.config.gemini_config import get_gemini_model   # ✅ fixed import
+from app.models.schema import RiskAnalysisRequest, RiskAnalysisResult
 
 router = APIRouter()
 
-# ─── Helper: fetch weather data for a city ───────────────────────────────────
 async def get_weather(city: str) -> dict:
     api_key = os.getenv("OPENWEATHER_API_KEY")
     url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
@@ -27,7 +26,6 @@ async def get_weather(city: str) -> dict:
         pass
     return {"city": city, "condition": "unknown", "temperature": 0, "wind_speed": 0}
 
-# ─── Helper: ask Gemini to analyze risk ──────────────────────────────────────
 def analyze_with_gemini(origin: str, destination: str, weather_origin: dict, weather_dest: dict) -> dict:
     prompt = f"""
 You are a supply chain risk analyst. Analyze the risk for a shipment and respond ONLY with valid JSON.
@@ -46,16 +44,12 @@ Return ONLY this JSON (no extra text):
   "recommendation": "<one clear action to take>"
 }}
 """
-    client = get_gemini_client()                          # ✅ updated to client
-    response = client.models.generate_content(            # ✅ updated call
-        model="gemini-2.0-flash",
-        contents=prompt
-    )
-    raw = response.text                                   # ✅ fixed typo: .txt → .text
+    model = get_gemini_model()              # ✅ consistent with chats.py
+    response = model.generate_content(prompt)  # ✅ correct call style
+    raw = response.text
     raw = raw.replace("```json", "").replace("```", "").strip()
     return json.loads(raw)
 
-# ─── POST /api/risk/analyze ───────────────────────────────────────────────────
 @router.post("/analyze", response_model=RiskAnalysisResult)
 async def analyze_risk(req: RiskAnalysisRequest):
     doc = db.collection("shipments").document(req.shipment_id).get()
@@ -78,10 +72,10 @@ async def analyze_risk(req: RiskAnalysisRequest):
     })
 
     db.collection("risk_analyses").add({
-        "shipment_id":   req.shipment_id,
-        "analyzed_at":   now,
+        "shipment_id":  req.shipment_id,
+        "analyzed_at":  now,
         **gemini_result,
-        "weather_data":  {"origin": weather_origin, "destination": weather_dest},
+        "weather_data": {"origin": weather_origin, "destination": weather_dest},
     })
 
     return RiskAnalysisResult(
@@ -90,7 +84,6 @@ async def analyze_risk(req: RiskAnalysisRequest):
         **gemini_result,
     )
 
-# ─── GET /api/risk/{shipment_id}/history ─────────────────────────────────────
 @router.get("/{shipment_id}/history")
 def get_risk_history(shipment_id: str):
     docs = (

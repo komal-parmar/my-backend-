@@ -2,25 +2,23 @@ import os
 import json
 import firebase_admin
 from firebase_admin import credentials, firestore
-from dotenv import load_dotenv
 
-load_dotenv()
+def init_firebase():
+    if not firebase_admin._apps:
+        firebase_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
 
-import firebase_admin
-from firebase_admin import credentials, firestore
-import os
-import json
+        if not firebase_json:
+            raise ValueError("FIREBASE_SERVICE_ACCOUNT_JSON is not set")
 
-if not firebase_admin._apps:
-    service_account_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
+        try:
+            cred_dict = json.loads(firebase_json)
+            cred = credentials.Certificate(cred_dict)
+            firebase_admin.initialize_app(cred)
+        except Exception as e:
+            raise RuntimeError(f"Firebase init failed: {e}")
 
-    if service_account_json:
-        service_account_dict = json.loads(service_account_json)
-        cred = credentials.Certificate(service_account_dict)
-    else:
-        cred_path = "./app/config/ServiceAccountKey.json"
-        cred = credentials.Certificate(cred_path)
+    return firestore.client()
 
-    firebase_admin.initialize_app(cred)
 
-db = firestore.client()
+# Initialize DB
+db = init_firebase()
